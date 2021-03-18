@@ -107,6 +107,22 @@ def KFoldXVAL(X,Y,model,k=5):
 
 if __name__ =="__main__":
 
+    import argparse
+    parser = argparse.ArgumentParser(description='Perform K fold cross validation for a model \
+        on varied regularization parameters')
+    parser.add_argument("--model",default = "KRR",type=str,help="model to train [KRR,KLR,KSVM]")
+    parser.add_argument("--K", default = "linear",type = str,help ="kernel [linear,]" )
+    parser.add_argument('--regs', nargs='+', help='list of regularizations to access', type = float,
+        required=True)
+    args = parser.parse_args()
+
+    MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
+    KERNEL_MAP = {"linear":linear_kernel}
+
+    model = MODEL_MAP[args.model]
+    kernel = KERNEL_MAP[args.K]
+
+
     #load dataset into pandas
     Xpath = os.path.join("data","Xtr0_mat100.csv")
     Ypath = os.path.join("data","Ytr0.csv")
@@ -124,24 +140,26 @@ if __name__ =="__main__":
     X_  = scaler.scale(X)
 
 
-    model =  KLR(kernel = linear_kernel,reg=9*1e-3)
-    model.fit(X_,Y,conv_plot = True)
+    # model =  KLR(kernel = linear_kernel,reg=9*1e-3)
+    # model.fit(X_,Y,conv_plot = True)
 
 
     # # model  = KRR(kernel = linear_kernel,reg=0.01)
     # regs = [0.1**i for i in range(7)]
 
 
-    
-    # regs=  [1e-2,1e-1,1,10]
-    # reg_accs =  []
-    # for reg in regs:
-    #     model  = KLR(kernel = linear_kernel,reg=reg)
-    #     kacc = KFoldXVAL(X_,Y,model,k=5)
-    #     reg_accs.append(kacc)
+    reg_accs =  []
+    for reg in args.regs:
+        model_  = model(kernel = kernel,reg=reg)
+        kacc = KFoldXVAL(X_,Y,model_,k=5)
+        reg_accs.append(kacc)
 
-    # plt.semilogx(regs,reg_accs)
-    # plt.show()
+    plt.style.use('ggplot')
+    plt.grid('on')
+    plt.semilogx(args.regs,reg_accs)
+    plt.xlabel(r"$\gamma$")
+    plt.ylabel("acc")
+    plt.show()
 
 
 
