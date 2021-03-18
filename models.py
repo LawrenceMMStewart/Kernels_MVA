@@ -17,7 +17,7 @@ class KRR():
 		initialise kernel ridge regression
 		"""
 		self.reg = reg 
-		assert reg>0 , "Enter a positive reg param"
+		assert reg>=0 , "Enter a positive reg param"
 		self.alpha = None 
 		self.kernel = kernel
 		self.X = None
@@ -92,15 +92,15 @@ class KLR():
 	def __init__(self,kernel = None, reg = 0.1):
 		self.kernel = kernel
 		self.reg = reg
-		assert reg>0 , "Enter a positive reg param"
+		assert reg>=0 , "Enter a positive reg param"
 		self.X = None
 		self.alpha = None
 	
-	def fit(self,X,Y,tol = 1e-2, max_iters = 50, conv_plot = False):
+	def fit(self,X,Y,tol = 1e-3, max_iters = 50, conv_plot = False):
 		assert self.kernel is not None , "Please input a valid kernel"
 		n = X.shape[0]
 		self.alpha = np.zeros((n,1))
-		self.prev_alpha = np.ones((n,1))
+		self.prev_alpha = np.ones((n,1))*2*tol
 		self.X = X
 		K = self.kernel(X,X)
 
@@ -109,7 +109,7 @@ class KLR():
 		i = 0
 		gap  = 2*tol
 		while gap>tol:
-			gap  = np.linalg.norm(self.alpha-self.prev_alpha)
+			gap  = np.abs(self.alpha - self.prev_alpha).max()
 			gaps.append(gap)
 			i += 1
 			if i > max_iters:
@@ -120,6 +120,8 @@ class KLR():
 			W = sig(Y*m)*sig(-Y*m)
 			P = -sig(-Y*m)
 			z = m - P*Y/W
+			# z = m + Y / (sig(Y*m) + 1e-11)
+
 
 			# #delete this debugging line
 			# if conv_plot:

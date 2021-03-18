@@ -114,6 +114,7 @@ if __name__ =="__main__":
     parser.add_argument("--K", default = "linear",type = str,help ="kernel [linear,]" )
     parser.add_argument('--regs', nargs='+', help='list of regularizations to access', type = float,
         required=True)
+    parser.add_argument("--debug",default=False,type=bool,help = "debug KLR")
     args = parser.parse_args()
 
     MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
@@ -147,19 +148,26 @@ if __name__ =="__main__":
     # # model  = KRR(kernel = linear_kernel,reg=0.01)
     # regs = [0.1**i for i in range(7)]
 
+    if args.debug:
+        model = KLR(kernel = kernel ,reg = args.regs[0])
+        model.fit(X_,Y,conv_plot = True)
+        
 
-    reg_accs =  []
-    for reg in args.regs:
-        model_  = model(kernel = kernel,reg=reg)
-        kacc = KFoldXVAL(X_,Y,model_,k=5)
-        reg_accs.append(kacc)
+    else:
 
-    plt.style.use('ggplot')
-    plt.grid('on')
-    plt.semilogx(args.regs,reg_accs)
-    plt.xlabel(r"$\gamma$")
-    plt.ylabel("acc")
-    plt.show()
+
+        reg_accs =  []
+        for reg in args.regs:
+            model_  = model(kernel = kernel,reg=reg)
+            kacc = KFoldXVAL(X_,Y,model_,k=5)
+            reg_accs.append(kacc)
+
+        plt.style.use('ggplot')
+        plt.grid('on')
+        plt.semilogx(args.regs,reg_accs)
+        plt.xlabel(r"$\gamma$")
+        plt.ylabel("acc")
+        plt.show()
 
 
 
