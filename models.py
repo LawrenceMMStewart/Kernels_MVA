@@ -176,6 +176,7 @@ class KSVM():
 		#reset weights
 		assert self.kernel is not None , "Please input a valid kernel"
 		n = X.shape[0]
+		self.X = X 
 		K = self.kernel(X,X)
 		#alpha = cp.Variable(n)
 		#cons_var = cp.multiply(alpha,Y.reshape((-1,)))
