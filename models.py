@@ -117,10 +117,13 @@ class KLR():
 
 			#update weights
 			m = K@ self.alpha
-			W = sig(m)*sig(-m)
+			W = sig(Y*m)*sig(-Y*m)
 			P = -sig(-Y*m)
 			z = m - P*Y/W
-			# z = m + Y / sig(Y*m)
+
+			# #delete this debugging line
+			# if conv_plot:
+			# 	z2 = m + Y / sig(Y*m)
 
 			self.prev_alpha = self.alpha
 			self.alpha = solve_WKRR(K,W,z,self.reg)
