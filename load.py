@@ -107,6 +107,12 @@ def KFoldXVAL(X,Y,model,k=5):
 
 if __name__ =="__main__":
 
+    """
+    For greg: to do debugging on KLR run something like this with whatever param you want
+
+    python load.py --model KLR --K linear --regs 1e-3 --debug True
+    """
+
     import argparse
     parser = argparse.ArgumentParser(description='Perform K fold cross validation for a model \
         on varied regularization parameters')
@@ -151,7 +157,7 @@ if __name__ =="__main__":
     if args.debug:
         model = KLR(kernel = kernel ,reg = args.regs[0])
         model.fit(X_,Y,conv_plot = True)
-        
+
 
     else:
 
