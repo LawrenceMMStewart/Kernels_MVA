@@ -5,6 +5,7 @@ import numpy as np
 from models import * 
 from kernels import * 
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 """
 
 - A suggested plan is
@@ -81,8 +82,8 @@ def KFoldXVAL(X,Y,model,k=5):
     N =  n // k #size of datasets
 
     accs = []
-    for i in range(k):
-
+    for i in tqdm(range(k),desc="Fold:"):
+        
         eval_ids = np.arange(i*N,(i+1)*N)
         train_ids  = np.array( [i for i in range(n) if i not in eval_ids]  )
 
@@ -123,16 +124,19 @@ if __name__ =="__main__":
     X_  = scaler.scale(X)
 
 
-    model =  KLR(kernel = linear_kernel,reg=0.01)
-    model.fit(X_,Y)
-    import pdb ; pdb.set_trace()
+    model =  KLR(kernel = linear_kernel,reg=9*1e-3)
+    model.fit(X_,Y,conv_plot = True)
+
 
     # # model  = KRR(kernel = linear_kernel,reg=0.01)
     # regs = [0.1**i for i in range(7)]
 
+
+    
+    # regs=  [1e-2,1e-1,1,10]
     # reg_accs =  []
     # for reg in regs:
-    #     model  = KRR(kernel = linear_kernel,reg=reg)
+    #     model  = KLR(kernel = linear_kernel,reg=reg)
     #     kacc = KFoldXVAL(X_,Y,model,k=5)
     #     reg_accs.append(kacc)
 
