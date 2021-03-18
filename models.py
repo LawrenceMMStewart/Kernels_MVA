@@ -40,21 +40,32 @@ class KRR():
 
 
 
+#def solve_WKRR(K,W,z,reg):
+#	"""
+#	solves weighted kernel ridge regression
+#	(used for KLR)
+#
+#	slide 153 of cours
+#	"""
+#	#matrix sqrt of W
+#	WR = W**(0.5)
+#	n = K.shape[0]
+#	A = K*W + n*reg*np.eye(n)
+#	b = WR*z
+#	alpha = WR * np.linalg.solve(A,b)
+#	return alpha
+
 def solve_WKRR(K,W,z,reg):
-	"""
-	solves weighted kernel ridge regression
-	(used for KLR)
-
-	slide 153 of cours
-	"""
-	#matrix sqrt of W
-	WR = W**(0.5)
-	n = K.shape[0]
-	A = K*W + n*reg*np.eye(n)
-	b = WR*z
-	alpha = WR * np.linalg.solve(A,b)
-	return alpha
-
+    """
+    solves weighted kernel ridge regression
+    (used for KLR)
+    slide 153 of cours
+    """
+    n = K.shape[0]
+    WR = np.diag(np.sqrt(W.reshape(-1)))
+    WR_inv = np.diag(1 / np.sqrt(W.reshape(-1)))
+    alpha = np.linalg.solve((WR @ K @ WR + reg * n * np.eye(n)) @ WR_inv, WR @ z)
+    return alpha
 
 def sig(x):
     "Numerically stable sigmoid function."
@@ -115,12 +126,20 @@ class KLR():
 			if i > max_iters:
 				break
 
-			#update weights
+			##update weights 1
 			m = K@ self.alpha
 			W = sig(Y*m)*sig(-Y*m)
 			P = -sig(-Y*m)
 			z = m - P*Y/W
 			# z = m + Y / (sig(Y*m) + 1e-11)
+			
+			
+			#update weights 2
+			#m = K@ self.alpha
+			#W = np.log(1 + np.exp(- (Y*m)))*np.log(1 + np.exp( (Y*m)))
+			#P = -np.log(1 + np.exp(- (Y*m)))
+			#z = m - P*Y/W
+
 
 
 			# #delete this debugging line
