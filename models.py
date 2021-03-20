@@ -1,6 +1,7 @@
 import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 """
 Kernel Ridge Regression
 """
@@ -31,12 +32,18 @@ class KRR():
 		K  = self.kernel(X,X)
 		n = K.shape[0]
 		self.alpha = np.linalg.solve(K +self.reg*n*np.eye(n),Y)
+		#save kernel matrix for train data
+		self.KX = K
 
-	def predict(self,X2):
+	def predict(self,X2=None):
 		assert self.alpha is not None , "Fit model before predictions"
-		#distance between points
-		K = self.kernel(X2,self.X)
-		return K@self.alpha
+
+		if X2 is not None:
+			#distance between points
+			K = self.kernel(X2,self.X)
+			return K@self.alpha
+		else:
+			return self.KX @ self.alpha
 
 
 
@@ -82,14 +89,7 @@ def sig(x):
 
     return s 
 
-    # if x >= 0:
-    #     z = exp(-x)
-    #     return 1 / (1 + z)
-    # else:
-    #     # if x is less than zero then z will be small, denom can't be
-    #     # zero because it's 1+z.
-    #     z = exp(x)
-    #     return z / (1 + z)
+ 
 
 
 class KLR():
@@ -107,13 +107,15 @@ class KLR():
 		self.X = None
 		self.alpha = None
 	
-	def fit(self,X,Y,tol = 1e-3, max_iters = 50, conv_plot = False):
+	def fit(self,X,Y,tol = 1e-4, max_iters = 50, conv_plot = False):
 		assert self.kernel is not None , "Please input a valid kernel"
 		n = X.shape[0]
 		self.alpha = np.zeros((n,1))
 		self.prev_alpha = np.ones((n,1))*2*tol
 		self.X = X
 		K = self.kernel(X,X)
+		#save train set kernel
+		self.Kx = K
 
 		#difference in norm of alpha values
 		gaps = []
@@ -126,25 +128,11 @@ class KLR():
 			if i > max_iters:
 				break
 
-			##update weights 1
+			##update weights 
 			m = K@ self.alpha
 			W = sig(Y*m)*sig(-Y*m)
 			P = -sig(-Y*m)
 			z = m - P*Y/W
-			# z = m + Y / (sig(Y*m) + 1e-11)
-			
-			
-			#update weights 2
-			#m = K@ self.alpha
-			#W = np.log(1 + np.exp(- (Y*m)))*np.log(1 + np.exp( (Y*m)))
-			#P = -np.log(1 + np.exp(- (Y*m)))
-			#z = m - P*Y/W
-
-
-
-			# #delete this debugging line
-			# if conv_plot:
-			# 	z2 = m + Y / sig(Y*m)
 
 			self.prev_alpha = self.alpha
 			self.alpha = solve_WKRR(K,W,z,self.reg)
@@ -152,18 +140,22 @@ class KLR():
 		if conv_plot:
 			xs = [i+1 for i in range(len(gaps))]
 			plt.plot(xs,gaps)
+			plt.title(f"max_iters = {max_iters}")
 			plt.xlabel("Iteration")
-			plt.ylabel(r"$|| \alpha_n - \alpha_{n-1}||_2$")
+			plt.ylabel(r"$|| \alpha_n - \alpha_{n-1}||_\infty$")
 			plt.show()
 			
 
 
-	def predict(self,X2):
+	def predict(self,X2=None):
 		assert self.alpha is not None , "Fit model before predictions"
-		#distance between points
-		K = self.kernel(X2,self.X)
-		return K@self.alpha
 
+		if X2 is not None:
+			#distance between points
+			K = self.kernel(X2,self.X)
+			return K@self.alpha
+		else:
+			return self.KX @ self.alpha
 
 
 class KSVM():
@@ -202,6 +194,10 @@ class KSVM():
 		n = X.shape[0]
 		self.X = X 
 		K = self.kernel(X,X)
+		#save train set kernel
+		self.Kx = K
+
+
 		#alpha = cp.Variable(n)
 		#cons_var = cp.multiply(alpha,Y.reshape((-1,)))
 		#constraint_left = np.concatenate([cons_var, cons_var])
@@ -223,8 +219,101 @@ class KSVM():
 		dual.solve()
 		self.alpha = alpha.value
 
-	def predict(self,X2):
+
+
+	def predict(self,X2=None):
 		assert self.alpha is not None , "Fit model before predictions"
-		#distance between points
-		K = self.kernel(X2,self.X)
-		return K@self.alpha
+
+		if X2 is not None:
+			#distance between points
+			K = self.kernel(X2,self.X)
+			return K@self.alpha
+		else:
+			return self.KX @ self.alpha
+
+
+
+
+class standardise():
+
+    def __init__(self,X,method='max_min'):
+        """
+        fit standardiser to data
+        """
+        if method == "max_min":
+            self.Max = X.max(axis=0)
+            self.Min = X.min(axis=0)
+        else:
+            raise ValueError("Please enter a valid method")
+
+    def scale(self,X):
+        """
+        scale a data matrix X
+        """
+
+        Xhat = (X - self.Min) / (self.Max - self.Min)
+        return Xhat
+
+
+def calculate_acc(y,ypred):
+    """
+    calculate the accuracy
+    """
+
+    #threshold if a regression model
+    ypred[ypred>=0]=1
+    ypred[ypred<0] = -1
+
+    return np.mean(ypred==y)
+
+
+def KFoldXVAL(X,Y,model,k=5):
+    """
+    Performs K-fold cross validation on dataset
+
+    Args:
+    X : n x d data
+    Y  : n x 1 labels
+    kernel : function calculating the kernel matrix from X
+    model : class with functions fit and predict to evaluate
+
+    Returns:
+    Acc : float [0,1]
+    """
+    assert len(X)==len(Y)
+    n = len(X)
+    assert k<n
+
+    N =  n // k #size of datasets
+
+    eval_accs = []
+    train_accs = []
+    for i in tqdm(range(k),desc="Fold:"):
+        
+        eval_ids = np.arange(i*N,(i+1)*N)
+        train_ids  = np.array( [i for i in range(n) if i not in eval_ids]  )
+
+        Xtrain = X[train_ids]
+        Xeval =  X[eval_ids]
+
+        Ytrain = Y[train_ids]
+        Yeval = Y[eval_ids]
+
+        model.fit(Xtrain,Ytrain)
+
+
+        eval_predictions = model.predict(Xeval)
+        eval_fold_acc = calculate_acc(Yeval,eval_predictions)
+        eval_accs.append(eval_fold_acc)
+
+        train_predictions = model.predict(Xtrain)
+        train_fold_acc = calculate_acc(Ytrain,train_predictions)
+        train_accs.append(train_fold_acc)
+        # print(f"Fold {i} obtained acc of {fold_acc}")
+
+    tacc = np.mean(train_accs)
+    eacc = np.mean(eval_accs)
+
+
+    return tacc,eacc
+
