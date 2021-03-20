@@ -49,6 +49,8 @@ if __name__ =="__main__":
     parser.add_argument('--reg', default = 0.01, help='reg value', type = float)
     parser.add_argument("--params",nargs='+',type=float,help= "parameters e.g. l in gaussian kernel or degree of poly kernel",
         required=True)
+    parser.add_argument("--data",type=str,default='0',help= "which dataset to evaluate performance on [0,1,2,all]")
+    parser.add_argument("--save",default=None,type=str,help="if not none save plot with name ")
     args = parser.parse_args()
 
     MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
@@ -63,8 +65,8 @@ if __name__ =="__main__":
 
 
     #load dataset into pandas
-    Xpath = os.path.join("data","Xtr0_mat100.csv")
-    Ypath = os.path.join("data","Ytr0.csv")
+    Xpath = os.path.join("data","Xtr%s_mat100.csv"%args.data)
+    Ypath = os.path.join("data","Ytr%s.csv"%args.data)
     dfX = pd.read_csv(Xpath,header=None,sep = " ")
     dfY = pd.read_csv(Ypath,header=0,sep = ",")
 
@@ -98,18 +100,22 @@ if __name__ =="__main__":
         max_id= np.argmax([r[1] for r in p_accs])
         if args.K == 'poly':
             
-            plt.plot(args.params,[r[0] for r in p_accs],label = "Train")
-            plt.plot(args.params,[r[1] for r in p_accs],label = "Validation")
+            plt.plot([int(i) for i in args.params],[r[0] for r in p_accs],label = "Train",marker= '.')
+            plt.plot([int(i) for i in args.params],[r[1] for r in p_accs],label = "Validation",marker= '.')
             plt.plot(args.params[max_id],[r[1] for r in p_accs][max_id],label = "Best",marker='D',color='g')
             
      
         elif args.K == "exp":
-            plt.semilogx(args.params,[r[0] for r in p_accs],label = "Train")
-            plt.semilogx(args.params,[r[1] for r in p_accs],label = "Validation")
-            plt.semilogx(args.params[max_id],[r[1] for r in p_accs][max_id],label = "Best",marker='D',color='g')
+            plt.semilogx(args.params,[r[0] for r in p_accs],label = "Train",marker= '.')
+            plt.semilogx(args.params,[r[1] for r in p_accs],label = "Validation",marker= '.')
+            plt.semilogx(args.params[max_id],[r[1] for r in p_accs][max_id],label = "Best",marker='x',color='g')
+
+        #---------
         plt.legend()
         plt.xlabel(f"{names[args.K]}")
         plt.ylabel("acc")
+        if args.save is not None:
+            plt.savefig("saved_plots/"+args.save)
         plt.show()
 
 
