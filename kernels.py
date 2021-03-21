@@ -14,18 +14,27 @@ def square_dist(X1,X2):
 	M = np.sum((X1_ - X2_)**2,axis=2)
 	return M 
 
-def linear_kernel(X1,X2):
-	return X1 @ X2.T
+def linear_kernel(X1,X2=None):
+	if X2 is None:
+		return X1 @ X1.T
+	else:
+		return X1 @ X2.T
 
 
-def polynomial_kernel(X1,X2,deg=2):
-	return (X1 @ X2.T)**deg 
+def polynomial_kernel(X1,X2=None,deg=2):
+	if X2 is None:
+		return (X1@X1.T)**deg
+	else:
+		return (X1 @ X2.T)**deg 
 
 #alternative to square_dist for speed
 from scipy.spatial import distance_matrix
 
-def exp_kernel(X1,X2,l=1):
-	M = distance_matrix(X1,X2)**2
+def exp_kernel(X1,X2=None,l=1):
+	if X2 is None:
+		M = distance_matrix(X1,X1)**2
+	else:
+		M = distance_matrix(X1,X2)**2
 	return np.exp(-M/ (2*l))
 
 

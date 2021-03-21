@@ -10,6 +10,7 @@ from models import *
 from kernels import * 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from load import *
 """
 
 - A suggested plan is
@@ -62,23 +63,8 @@ if __name__ =="__main__":
 
     model = MODEL_MAP[args.model]
     kernel = KERNEL_MAP[args.K]
-
-
-    #load dataset into pandas
-    Xpath = os.path.join("data","Xtr%s_mat100.csv"%args.data)
-    Ypath = os.path.join("data","Ytr%s.csv"%args.data)
-    dfX = pd.read_csv(Xpath,header=None,sep = " ")
-    dfY = pd.read_csv(Ypath,header=0,sep = ",")
-
-    # convert to numpy arrays
-    X = dfX.to_numpy()
-    Y = dfY["Bound"].to_numpy()
-    # convert Y to take values in {-1,1}
-    Y = (2*Y - 1).reshape(-1,1)
-
-    #standardise data
-    scaler = standardise(X)
-    X_  = scaler.scale(X)
+    
+    X_,Y,_ = load_100(id=args.data)
 
     p_accs =  []
     for i in tqdm(range(len(args.params)),desc= "params"):

@@ -10,30 +10,7 @@ from models import *
 from kernels import * 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-"""
-
-- A suggested plan is
-
-   a) implement a linear classifier to use the _mat100.csv  files (e.g., logistic regression). You can also start with a ridge regression estimator 
-   used as a classifier (regression on labels -1, or +1), since this is very easy to implement.
-
-   b) move to a nonlinear classifier by using a Gaussian kernel (still using the *_mat100.csv files).  
-   Kernel ridge regression is a good candidate, but then you may move to a support vector machine (use a QP solver). 
-   Wny starting with kernel ridge regression => because it can be implemented in a few lines of code.
-
-
-   c) then start working on the raw sequences. Time to design a good kernel for this data!
-
-
-- You can find examples of practical sessions on kernels here, which were designed by Romain Menegaux,
- a student of JP : http://members.cbio.mines-paristech.fr/~jvert/svn/kernelcourse/course/2019ammi/index.html
-- read the rules carefully. In particular, the DIY rule.  You can also form teams of 3 students. 
-- the goal is not necessarily to introduce some competition among students. If you implement the right baselines, you are going to get a good grade!  
-- lectures on kernels for biological sequences are available on the course website (see Bonus at the bottom).
-- Good luck!
-"""
-
-
+from load import *
 
 
 if __name__ =="__main__":
@@ -53,6 +30,7 @@ if __name__ =="__main__":
         required=True)
     parser.add_argument("--scale",type=float,default=1.0,help= "paramter l in gaussian kernel")
     parser.add_argument("--degree",type = int,default = 2,help = "parameter for degree on polynomial kernel")
+    parser.add_argument("--data",type=int,default=0,help= "dataset to load")
     args = parser.parse_args()
 
     MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
@@ -63,22 +41,8 @@ if __name__ =="__main__":
     model = MODEL_MAP[args.model]
     kernel = KERNEL_MAP[args.K]
 
+    X_,Y,_ = load_100(id=args.data)
 
-    #load dataset into pandas
-    Xpath = os.path.join("data","Xtr0_mat100.csv")
-    Ypath = os.path.join("data","Ytr0.csv")
-    dfX = pd.read_csv(Xpath,header=None,sep = " ")
-    dfY = pd.read_csv(Ypath,header=0,sep = ",")
-
-    # convert to numpy arrays
-    X = dfX.to_numpy()
-    Y = dfY["Bound"].to_numpy()
-    # convert Y to take values in {-1,1}
-    Y = (2*Y - 1).reshape(-1,1)
-
-    #standardise data
-    scaler = standardise(X)
-    X_  = scaler.scale(X)
 
     reg_accs =  []
     for i in tqdm(range(len(args.regs)),desc= "Regularization"):

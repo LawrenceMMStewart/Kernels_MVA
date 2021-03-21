@@ -1,4 +1,8 @@
 import numpy as np
+from scipy.linalg import block_diag
+# import cvxpy as cp
+# from cvxopt import matrix
+# from cvxopt import solvers
 import cvxpy as cp
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -29,11 +33,11 @@ class KRR():
 		assert self.kernel is not None , "Please input a valid kernel"
 		self.alpha = None
 		self.X = X
-		K  = self.kernel(X,X)
+		K  = self.kernel(X)
 		n = K.shape[0]
 		self.alpha = np.linalg.solve(K +self.reg*n*np.eye(n),Y)
 		#save kernel matrix for train data
-		self.KX = K
+		self.Kx = K
 
 	def predict(self,X2=None):
 		assert self.alpha is not None , "Fit model before predictions"
@@ -43,24 +47,9 @@ class KRR():
 			K = self.kernel(X2,self.X)
 			return K@self.alpha
 		else:
-			return self.KX @ self.alpha
+			return self.Kx @ self.alpha
 
 
-
-#def solve_WKRR(K,W,z,reg):
-#	"""
-#	solves weighted kernel ridge regression
-#	(used for KLR)
-#
-#	slide 153 of cours
-#	"""
-#	#matrix sqrt of W
-#	WR = W**(0.5)
-#	n = K.shape[0]
-#	A = K*W + n*reg*np.eye(n)
-#	b = WR*z
-#	alpha = WR * np.linalg.solve(A,b)
-#	return alpha
 
 def solve_WKRR(K,W,z,reg):
     """
@@ -113,7 +102,7 @@ class KLR():
 		self.alpha = np.zeros((n,1))
 		self.prev_alpha = np.ones((n,1))*2*tol
 		self.X = X
-		K = self.kernel(X,X)
+		K = self.kernel(X)
 		#save train set kernel
 		self.Kx = K
 
@@ -155,26 +144,14 @@ class KLR():
 			K = self.kernel(X2,self.X)
 			return K@self.alpha
 		else:
-			return self.KX @ self.alpha
+			return self.Kx @ self.alpha
+
 
 
 class KSVM():
 	"""
-	Class for kernel SVM
-	solving
-	min_alpha 1/n sum phi_{hinge}(-y_i(K @alpha)_i) + reg ||alpha||_K
-	where phi_{hinge}(x) = max(1-x,0)
-
-	reformulate as follow:
-	min_alpha,ksi 1/n sum ksi_i + reg ||alpha||_K
-	where
-		y_i(K @alpha)_i + ksi_i - 1 >= 0
-		ksi_i >= 0
-
-	or see
-	(slide 212 of class)
-	min_alpha 2 alpha.T y - ||alpha||_K
-	where 0<= y_i alpha_i <= 1/(2 reg n)
+	Solve Kernel Support Vector Machine QP (C-form)
+	see slide 165 of class
 	"""
 
 	def __init__(self,kernel = None,reg = 0.1):
@@ -193,31 +170,19 @@ class KSVM():
 		assert self.kernel is not None , "Please input a valid kernel"
 		n = X.shape[0]
 		self.X = X 
-		K = self.kernel(X,X)
+		K = self.kernel(X)
 		#save train set kernel
 		self.Kx = K
 
+		alpha = cp.Variable((n,1))
+		problem  = cp.Problem(cp.Minimize(-2*alpha.T@Y + cp.quad_form(alpha,K)),
+			[
+			2*n*self.reg*cp.multiply(Y,alpha)<=1,
+			cp.multiply(Y,alpha)>=0
+			])
+		problem.solve()
 
-		#alpha = cp.Variable(n)
-		#cons_var = cp.multiply(alpha,Y.reshape((-1,)))
-		#constraint_left = np.concatenate([cons_var, cons_var])
-		#constraint_right = np.concatenate([np.ones(n)/(2*self.reg*n), np.zeros(n)])
-		#dual = cp.Problem(
-		#	cp.Minimize(2*alpha.T@Y- alpha.T@K@alpha),
-		#	[constraint_left <= constraint_right],
-		#	)
-		#dual.solve()
-		#self.alpha = alpha.value
-		y = np.diag(Y.reshape(-1))
-		constraint_matrix = np.r_[y, -y]
-		constraint_vector = np.concatenate([np.ones(n)/(2*self.reg*n), np.zeros(n)])
-		alpha = cp.Variable(n)
-		dual = cp.Problem(
-			cp.Minimize(0.5 * cp.quad_form(alpha, K) - Y.reshape(-1).T @ alpha),
-			[constraint_matrix @ alpha <= constraint_vector],
-			)
-		dual.solve()
-		self.alpha = alpha.value
+		self.alpha= alpha.value
 
 
 
@@ -229,30 +194,9 @@ class KSVM():
 			K = self.kernel(X2,self.X)
 			return K@self.alpha
 		else:
-			return self.KX @ self.alpha
+			return self.Kx @ self.alpha
 
 
-
-
-class standardise():
-
-    def __init__(self,X,method='max_min'):
-        """
-        fit standardiser to data
-        """
-        if method == "max_min":
-            self.Max = X.max(axis=0)
-            self.Min = X.min(axis=0)
-        else:
-            raise ValueError("Please enter a valid method")
-
-    def scale(self,X):
-        """
-        scale a data matrix X
-        """
-
-        Xhat = (X - self.Min) / (self.Max - self.Min)
-        return Xhat
 
 
 def calculate_acc(y,ypred):
