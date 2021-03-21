@@ -33,7 +33,7 @@ class KRR():
 		assert self.kernel is not None , "Please input a valid kernel"
 		self.alpha = None
 		self.X = X
-		K  = self.kernel(X)
+		K  = self.kernel(X,X)
 		n = K.shape[0]
 		self.alpha = np.linalg.solve(K +self.reg*n*np.eye(n),Y)
 		#save kernel matrix for train data
@@ -50,6 +50,21 @@ class KRR():
 			return self.Kx @ self.alpha
 
 
+
+#def solve_WKRR(K,W,z,reg):
+#	"""
+#	solves weighted kernel ridge regression
+#	(used for KLR)
+#
+#	slide 153 of cours
+#	"""
+#	#matrix sqrt of W
+#	WR = W**(0.5)
+#	n = K.shape[0]
+#	A = K*W + n*reg*np.eye(n)
+#	b = WR*z
+#	alpha = WR * np.linalg.solve(A,b)
+#	return alpha
 
 def solve_WKRR(K,W,z,reg):
     """
@@ -102,7 +117,7 @@ class KLR():
 		self.alpha = np.zeros((n,1))
 		self.prev_alpha = np.ones((n,1))*2*tol
 		self.X = X
-		K = self.kernel(X)
+		K = self.kernel(X,X)
 		#save train set kernel
 		self.Kx = K
 
@@ -170,7 +185,7 @@ class KSVM():
 		assert self.kernel is not None , "Please input a valid kernel"
 		n = X.shape[0]
 		self.X = X 
-		K = self.kernel(X)
+		K = self.kernel(X,X)
 		#save train set kernel
 		self.Kx = K
 
@@ -197,6 +212,26 @@ class KSVM():
 			return self.Kx @ self.alpha
 
 
+
+# class standardise():
+
+#     def __init__(self,X,method='max_min'):
+#         """
+#         fit standardiser to data
+#         """
+#         if method == "max_min":
+#             self.Max = X.max(axis=0)
+#             self.Min = X.min(axis=0)
+#         else:
+#             raise ValueError("Please enter a valid method")
+
+#     def scale(self,X):
+#         """
+#         scale a data matrix X
+#         """
+
+#         Xhat = (X - self.Min) / (self.Max - self.Min)
+#         return Xhat
 
 
 def calculate_acc(y,ypred):
@@ -250,7 +285,7 @@ def KFoldXVAL(X,Y,model,k=5):
         eval_fold_acc = calculate_acc(Yeval,eval_predictions)
         eval_accs.append(eval_fold_acc)
 
-        train_predictions = model.predict(Xtrain)
+        train_predictions = model.predict()
         train_fold_acc = calculate_acc(Ytrain,train_predictions)
         train_accs.append(train_fold_acc)
         # print(f"Fold {i} obtained acc of {fold_acc}")

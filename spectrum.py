@@ -20,31 +20,28 @@ def all_ngrams(s,k):
     """
     return list(zip(*[s[i:] for i in range(k)]))
 
-def spec_embed(s,k,no_s):
+def spec_embed(s,k,no_s,pos):
     """
     embed a string s using spectrum RKHS
     """
     subs = all_ngrams(s,k)
     vec = np.zeros((no_s))
     for sub in subs:
-        ind = POS.index(sub)
+        ind = pos.index(sub)
         vec[ind]+=1
     return vec.reshape(1,-1)
 
-def spec_embed_data(X,k,no_s):
+def spec_embed_data(X,k,no_s,pos):
     n = X.shape[0]
     phi = np.zeros((n,no_s))
     for i in range(n):
-        phi[i] = spec_embed(X[i],k,no_s)
+        phi[i] = spec_embed(X[i],k,no_s,pos)
     return phi
 
 
+def spec_kernel(X1,X2):
+    return X1 @ X2.T
 
-def spec_dist(X,Y=None):
-    if Y is None:
-        return X@X.T
-    else:
-        return Y@X.T
 
 
 if __name__ == "__main__":
@@ -63,11 +60,6 @@ if __name__ == "__main__":
 
     X,Y,Xtest = load_std(id=0)
 
-    eX = spec_embed_data(X,KS,NO_S)
-    eXtest = spec_embed_data(Xtest,KS,NO_S)
+    eX = spec_embed_data(X,KS,NO_S,POS)
+    eXtest = spec_embed_data(Xtest,KS,NO_S,POS)
 
-    
-    import pdb; pdb.set_trace()
- 
-    # test = "ACGTAAGCTTCGAATCGGAA"
-    # print(all_ngrams(test,n))
