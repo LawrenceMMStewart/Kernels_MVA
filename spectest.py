@@ -25,6 +25,7 @@ if __name__ =="__main__":
     parser.add_argument('--reg', default = 0.01, help='reg value', type = float)
     parser.add_argument("--spec_sizes",nargs='+',type=int,help= "sizes of the spectrum to evaluate",
         required=True)
+    parser.add_argument("--K",default="spectrum",type = str,help = "kernel to use spectrum or mismatch")
     parser.add_argument("--data",type=str,default='0',help= "which dataset to evaluate performance on [0,1,2]")
     parser.add_argument("--save",default=None,type=str,help="if not none save plot with name ")
     args = parser.parse_args()
@@ -40,13 +41,18 @@ if __name__ =="__main__":
 
 
     k_accs = [] 
-    for i in tqdm(range(len(args.spec_sizes)),desc= "Spectrums"):
+    for i in tqdm(range(len(args.spec_sizes)),desc= f"{args.K}"):
         #global variable of all possible sequences
         KS = args.spec_sizes[i]
         POS = all_seq(KS)
         NO_S = len(POS)
         
-        X_ = spec_embed_data(X,KS,NO_S,POS)
+        if args.K =="spectrum":
+            X_ = spec_embed_data(X,KS,POS)
+        elif args.K =="mismatch":
+            d = generate_one_change(POS)
+            X_ = mismatch_embed_data(X,KS,POS,d)
+
         model_  = model(kernel = kernel, reg=args.reg)
         #k fold cross validation to calculate train and test acc
         ktacc,keacc = KFoldXVAL(X_,Y,model_,k=5)

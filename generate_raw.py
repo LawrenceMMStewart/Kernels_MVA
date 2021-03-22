@@ -34,10 +34,10 @@ if __name__ =="__main__":
         model = MODEL_MAP[args.models[i]]
         KS = args.spec_sizes[i]
         POS = all_seq(KS)
-        NO_S = len(POS)
+
         
-        X_ = spec_embed_data(X,KS,NO_S,POS)
-        Xtest_ = spec_embed_data(Xtest,KS,NO_S,POS)
+        X_ = spec_embed_data(X,KS,POS)
+        Xtest_ = spec_embed_data(Xtest,KS,POS)
 
         model_  = model(kernel = spec_kernel, reg=args.regs[i])
 
