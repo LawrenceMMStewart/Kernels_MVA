@@ -19,27 +19,37 @@ if __name__ =="__main__":
 
     import argparse
     parser = argparse.ArgumentParser(description='Generate Prediction Files')
-    parser.add_argument("--models",nargs='+',type=str,help="models for each dataset")
-    parser.add_argument('--regs', nargs='+', help='reg value for each dataset', type = float)
-    parser.add_argument("--spec_sizes",nargs='+',type=int,help= "spectrum sizes")
+    parser.add_argument("--model",default="KRR",type=str,help="model for each dataset")
+    parser.add_argument('--reg', default=0.01, help='reg value for each dataset', type = float)
+    parser.add_argument("--K",default="spectrum",type = str,help = "kernel to use spectrum or mismatch")
+    parser.add_argument("--spec_size",default=6,type=int,help= "spectrum sizes")
     args = parser.parse_args()
 
     MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
 
     preds=  []
+    model = MODEL_MAP[args.model]
+    KS = args.spec_size
+    POS = all_seq(KS)
+    print("generated all possible subsquences")
+
+    if args.K == "mismatch":
+        d = generate_one_change(POS)
+        print("generated all mismatch changes")
+
 
     for i in tqdm(range(3),desc="Dataset"):
 
         X,Y,Xtest = load_std(id=i)
-        model = MODEL_MAP[args.models[i]]
-        KS = args.spec_sizes[i]
-        POS = all_seq(KS)
 
-        
-        X_ = spec_embed_data(X,KS,POS)
-        Xtest_ = spec_embed_data(Xtest,KS,POS)
+        if args.K == 'spectrum':
+            X_ = spec_embed_data(X,KS,POS)
+            Xtest_ = spec_embed_data(Xtest,KS,POS)
+        elif args.K =="mismatch":
+            X_ = mismatch_embed_data(X,KS,POS,d)
+            Xtest_ = mismatch_embed_data(Xtest,KS,POS,d)
 
-        model_  = model(kernel = spec_kernel, reg=args.regs[i])
+        model_  = model(kernel = spec_kernel, reg=args.reg)
 
         model_.fit(X_,Y)
         Ypred = model_.predict(Xtest_)

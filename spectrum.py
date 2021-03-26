@@ -4,6 +4,7 @@ import os
 from load import load_std
 import numpy as np
 from copy import copy
+from tqdm import tqdm
 
 def all_seq(k):
     """
@@ -33,7 +34,9 @@ def generate_one_change(pos):
     for sub in pos:
         d[sub] = []
     #list positions of one-change substrings
-    for sub in pos:
+    for i in tqdm(range(len(pos)),desc="Hashing Mismatches for Substrings"):
+        sub  = pos[i]
+    # for sub in pos:
 
         s = list(sub)
         for i,schar in enumerate(s):
@@ -159,6 +162,6 @@ if __name__ == "__main__":
         eX = mismatch_embed_data(X,KS,POS,d)
         eXtest =mismatch_embed_data(Xtest,KS,POS,d)
 
-    import pdb; pdb.set_trace()
+
 
 

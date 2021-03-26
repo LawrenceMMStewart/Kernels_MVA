@@ -31,6 +31,7 @@ if __name__ =="__main__":
     parser.add_argument("--scale",type=float,default=1.0,help= "paramter l in gaussian kernel")
     parser.add_argument("--degree",type = int,default = 2,help = "parameter for degree on polynomial kernel")
     parser.add_argument("--data",type=int,default=0,help= "dataset to load")
+    parser.add_argument("--save",default=None,help="name of file to save")
     args = parser.parse_args()
 
     MODEL_MAP = {"KRR":KRR,"KLR":KLR,"KSVM":KSVM}
@@ -66,6 +67,8 @@ if __name__ =="__main__":
         plt.legend()
         plt.xlabel(r"$\gamma$")
         plt.ylabel("acc")
+        if args.save is not None:
+            plt.savefig("saved_plots/"+args.save)
         plt.show()
 
 
