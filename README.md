@@ -1,2 +1,1 @@
-1) `param.py` : for tuning parameters of kernels
-2) `reg.py` : for tuning the regularization parameter 
+`start.py` : for generating our leaderboard submission (mis-match kernel reg=6e-2 KLR)
